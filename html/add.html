@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Tags to Data</title>
+    <title>Add Data</title>
     <style>
-        /* Reuse of previous styles */
         * {
             margin: 0;
             padding: 0;
@@ -98,23 +97,24 @@
             overflow-y: auto;
         }
 
-        .tag-form {
+        .data-form {
             max-width: 600px;
             margin: 0 auto;
         }
 
-        .tag-form h2 {
+        .data-form h2 {
             margin-bottom: 20px;
             font-size: 24px;
         }
 
-        .tag-form label {
+        .data-form label {
             display: block;
             margin-bottom: 10px;
             font-weight: bold;
         }
 
-        .tag-form input[type="text"] {
+        .data-form input[type="text"], 
+        .data-form select {
             width: 100%;
             padding: 10px;
             margin-bottom: 15px;
@@ -122,11 +122,27 @@
             border-radius: 4px;
         }
 
-        .tag-form .data-row {
-            margin-bottom: 30px;
+        .autocomplete-suggestions {
+            border: 1px solid #ccc;
+            background-color: #fff;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: -10px;
+            position: absolute;
+            width: calc(100% - 20px);
         }
 
-        .tag-form button {
+        .autocomplete-suggestion {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .autocomplete-suggestion:hover {
+            background-color: #eee;
+        }
+
+        .data-form button {
             background-color: #007bff;
             color: white;
             padding: 10px 20px;
@@ -135,7 +151,7 @@
             cursor: pointer;
         }
 
-        .tag-form button:hover {
+        .data-form button:hover {
             background-color: #0056b3;
         }
 
@@ -147,15 +163,15 @@
     <div class="top-bar">
         <div class="logo">Credman</div>
         <div class="top-bar-buttons">
-            <button class="add-button" onclick="navigateTo('add.html')">Add</button>
-            <button class="profile-button" onclick="navigateTo('profile.html')">Profile</button>
-            <button class="logout-button" onclick="logout()">Logout</button>
+            <button class="add-button">Add</button>
+            <button class="profile-button">Profile</button>
+            <button class="logout-button">Logout</button>
         </div>
     </div>
 
     <!-- Sidebar -->
     <div class="sidebar">
-        <button class="category-button" onclick="navigateTo('home.html')">Search</button>
+        <button class="category-button" onclick="navigateTo('index.html')">Search</button>
         <button class="category-button" onclick="navigateTo('hashes.html')">Hashes</button>
         <button class="category-button" onclick="navigateTo('tools.html')">Tools</button>
         <button class="category-button" onclick="navigateTo('tags.html')">Tags</button>
@@ -166,41 +182,89 @@
 
     <!-- Main Content -->
     <div class="main-content">
-        <div class="tag-form">
-            <h2>Add Tags to Data Values</h2>
-            <div class="data-row">
-                <label for="data1">Data Value 1</label>
-                <input type="text" id="data1" placeholder="Enter tags for Data Value 1 (comma-separated)">
-            </div>
-            <div class="data-row">
-                <label for="data2">Data Value 2</label>
-                <input type="text" id="data2" placeholder="Enter tags for Data Value 2 (comma-separated)">
-            </div>
-            <div class="data-row">
-                <label for="data3">Data Value 3</label>
-                <input type="text" id="data3" placeholder="Enter tags for Data Value 3 (comma-separated)">
-            </div>
-            <div class="data-row">
-                <label for="data4">Data Value 4</label>
-                <input type="text" id="data4" placeholder="Enter tags for Data Value 4 (comma-separated)">
-            </div>
-            <button type="submit" onclick="submitTags()">Submit Tags</button>
+        <div class="data-form">
+            <h2>Add Data to Database</h2>
+
+            <label for="name">Name</label>
+            <input type="text" id="name" placeholder="Name">
+
+            <label for="type">Type</label>
+            <select id="type">
+                <option value="password">Password</option>
+                <option value="hash">Hash</option>
+                <option value="key">Key</option>
+                <option value="token">Token</option>
+            </select>
+
+            <label for="username">Username</label>
+            <input type="text" id="username" placeholder="Username">
+
+            <label for="system">System</label>
+            <input type="text" id="system" placeholder="IP or Domain...">
+
+            <label for="tags">Tags</label>
+            <input type="text" id="tags" placeholder="Enter tags" oninput="lookupTags()">
+            <div class="autocomplete-suggestions" id="suggestions"></div>
+
+            <button type="submit" onclick="submitData()">Submit Data</button>
         </div>
     </div>
 
     <script>
-        function submitTags() {
-            let tags1 = document.getElementById('data1').value;
-            let tags2 = document.getElementById('data2').value;
-            let tags3 = document.getElementById('data3').value;
-            let tags4 = document.getElementById('data4').value;
+        function lookupTags() {
+            const query = document.getElementById('tags').value;
+            if (query.length < 2) {
+                document.getElementById('suggestions').innerHTML = '';
+                return;
+            }
 
-            // This is where you'd send the tags data to a server or handle it in some way.
-            alert('Tags submitted:\n' +
-                'Data 1: ' + tags1 + '\n' +
-                'Data 2: ' + tags2 + '\n' +
-                'Data 3: ' + tags3 + '\n' +
-                'Data 4: ' + tags4);
+            // Example of API call for tag lookup
+            fetch(`https://example.com/api/tags?query=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    let suggestions = '';
+                    data.forEach(tag => {
+                        suggestions += `<div class="autocomplete-suggestion" onclick="selectTag('${tag}')">${tag}</div>`;
+                    });
+                    document.getElementById('suggestions').innerHTML = suggestions;
+                })
+                .catch(error => console.error('Error fetching tags:', error));
+        }
+
+        function selectTag(tag) {
+            document.getElementById('tags').value = tag;
+            document.getElementById('suggestions').innerHTML = '';
+        }
+
+        function submitData() {
+            const name = document.getElementById('name').value;
+            const type = document.getElementById('type').value;
+            const username = document.getElementById('username').value;
+            const system = document.getElementById('system').value;
+            const tags = document.getElementById('tags').value;
+
+            const data = {
+                name: name,
+                type: type,
+                username: username,
+                system: system,
+                tags: tags
+            };
+
+            // Example of API call to submit the data
+            fetch('https://example.com/api/data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert('Data submitted successfully');
+                console.log(result);
+            })
+            .catch(error => console.error('Error submitting data:', error));
         }
 
         function navigateTo(page) {

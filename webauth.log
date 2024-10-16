@@ -1,0 +1,10 @@
+2024/10/16 12:35:26 [2024-10-16T12:35:26-05:00] /Users/tkems/Documents/GitHub/credman/main.go:155 - LOGIN Bad or Unknown Username 401: Unauthorized login attempt from [::1]:63621 or if proxied 
+2024/10/16 12:38:21 [2024-10-16T12:38:21-05:00] /Users/tkems/Documents/GitHub/credman/main.go:155 - LOGIN Bad or Unknown Username 401: Unauthorized login attempt from [::1]:64380 or if proxied 
+2024/10/16 12:39:02 [2024-10-16T12:39:02-05:00] /Users/tkems/Documents/GitHub/credman/main.go:155 - LOGIN Bad or Unknown Username 401: Unauthorized login attempt from [::1]:64562 or if proxied 
+2024/10/16 12:41:21 [2024-10-16T12:41:21-05:00] /Users/tkems/Documents/GitHub/credman/main.go:155 - LOGIN Bad or Unknown Username 401: Unauthorized login attempt from [::1]:65159 or if proxied 
+2024/10/16 12:43:25 [2024-10-16T12:43:25-05:00] /Users/tkems/Documents/GitHub/credman/main.go:156 - LOGIN Bad or Unknown Username 401: Unauthorized login attempt from [::1]:49307 or if proxied 
+2024/10/16 12:43:46 [2024-10-16T12:43:46-05:00] /Users/tkems/Documents/GitHub/credman/main.go:156 - LOGIN Bad or Unknown Username 401: Unauthorized login attempt from [::1]:49394 or if proxied 
+2024/10/16 12:44:09 [2024-10-16T12:44:09-05:00] /Users/tkems/Documents/GitHub/credman/main.go:156 - LOGIN Bad or Unknown Username 401: Unauthorized login attempt from [::1]:49498 or if proxied 
+2024/10/16 12:45:48 [2024-10-16T12:45:48-05:00] /Users/tkems/Documents/GitHub/credman/main.go:156 - LOGIN Bad or Unknown Username 401: Unauthorized login attempt from [::1]:49921 or if proxied 
+2024/10/16 12:46:41 [2024-10-16T12:46:41-05:00] /Users/tkems/Documents/GitHub/credman/main.go:165 - LOGIN Bad or Unknown Password 401: Unauthorized login attempt from [::1]:50148 or if proxied 
+2024/10/16 12:46:55 [2024-10-16T12:46:55-05:00] /Users/tkems/Documents/GitHub/credman/main.go:165 - LOGIN Bad or Unknown Password 401: Unauthorized login attempt from [::1]:50206 or if proxied 

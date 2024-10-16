@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"runtime"
 
 	"github.com/golang-jwt/jwt/v5"
 	_ "github.com/mattn/go-sqlite3"
@@ -16,7 +17,7 @@ import (
 )
 
 // Define JWT Secret Key
-var jwtSecret = []byte("your_secret_key")
+var jwtSecret = []byte("supersecretkey")
 
 // Database connection
 var db *sql.DB
@@ -26,7 +27,7 @@ type User struct {
 	ID       int    `json:"id"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
-	Password string `json:"password"`
+	PasswordHash string `json:"passwordhash"`
 	ApiKey   string `json:"api_key"`
 	Authenticator []byte `json:"authenticator"` //Future Passkey option
 }
@@ -74,15 +75,57 @@ func createJWT(username string) (string, error) {
 }
 
 // Helper: Validate JWT token from Authorization header
-func validateJWT(tokenStr string) (*Claims, error) {
-	claims := &Claims{}
-	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
-		return jwtSecret, nil
+func validateJWT(tokenStr string) (bool, error) {
+	//claims := &Claims{}
+	//token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+	//	return jwtSecret, nil
+	//})
+
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		return []byte(jwtSecret), nil
 	})
+	
+	claims := token.Claims.(jwt.MapClaims)
 	if err != nil || !token.Valid {
-		return nil, err
+		return false, err
 	}
-	return claims, nil
+
+	// Get username from JWT claims
+	username, ok := claims["username"].(string)
+	if !ok {
+		//JWT does not contain the correct claim (username)
+		//TODO: Add logging
+		return false, err
+	}
+
+	// Validate the user against the SQLite database
+	if !validateUserInDB(username) {
+		// User may have been removed from DB
+		//TODO: Add logging
+		return false, err
+	} else {
+		return bool(true), err
+	}
+
+}
+
+// validateUserInDB checks if the user exists in the SQLite database
+func validateUserInDB(username string) bool {
+
+	// Query the user by ID
+	var user User
+	err := db.QueryRow("SELECT id, email, username FROM users WHERE username = ?", username).Scan(&user.ID, &user.Email, &user.Username)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// User not found
+			return false
+		}
+		log.Fatal(err)
+	}
+
+	// User exists
+	return true
 }
 
 // Login handler
@@ -105,22 +148,24 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check credentials against DB
 	var user User
-	row := db.QueryRow("SELECT id, username, email, password FROM users WHERE username = ?", loginData.Username)
-	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password)
+	row := db.QueryRow("SELECT username, passwordhash FROM users WHERE username = ?", loginData.Username)
+	err := row.Scan(&user.Username, &user.PasswordHash)
 	if err != nil {
+		log.Println(err) 
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
-		err =: LogToFile("webauth.log", "LOGIN Bad or Unknown Username 401: Unauthorized login attempt from "+ r.RemoteAddr + " or if proxied "+r.Header.Get("X-Forwarded-For"))
-		if err != nil {
-			log.Fatalf("Error logging to file: %v", err)
+		err2 := LogToFile("webauth.log", "LOGIN Bad or Unknown Username 401: Unauthorized login attempt from "+ r.RemoteAddr + " or if proxied "+r.Header.Get("X-Forwarded-For"))
+		if err2 != nil {
+			log.Fatalf("Error logging to file: %v", err2)
 		}
 		return
 	}
 
-	if !checkPasswordHash(loginData.Password, user.Password) {
+	if !checkPasswordHash(loginData.Password, user.PasswordHash) {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
-		err =: LogToFile("webauth.log", "LOGIN Bad or Unknown Password 401: Unauthorized login attempt from "+ r.RemoteAddr + " or if proxied "+r.Header.Get("X-Forwarded-For"))
-		if err != nil {
-			log.Fatalf("Error logging to file: %v", err)
+		err3 := LogToFile("webauth.log", "LOGIN Bad or Unknown Password 401: Unauthorized login attempt from "+ r.RemoteAddr + " or if proxied "+r.Header.Get("X-Forwarded-For"))
+		if err3 != nil {
+			log.Println(err3) 
+			log.Fatalf("Error logging to file: %v", err3)
 		}
 		return
 	}
@@ -128,6 +173,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	// Create JWT token
 	token, err := createJWT(user.Username)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, "Could not create token", http.StatusInternalServerError)
 		return
 	}
@@ -148,13 +194,19 @@ func addDataHandler(w http.ResponseWriter, r *http.Request) {
 	// Validate JWT
 	authHeader := r.Header.Get("Authorization")
 	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-	claims, err := validateJWT(tokenStr)
+	validUser, err := validateJWT(tokenStr)
 	if err != nil {
+		log.Println(err) 
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		err =: LogToFile("webauth.log", "ADD DATA 401: Unauthorized add from "+ r.RemoteAddr + " or if proxied "+r.Header.Get("X-Forwarded-For"))
-		if err != nil {
-			log.Fatalf("Error logging to file: %v", err)
+		err4 := LogToFile("webauth.log", "ADD DATA 401: Unauthorized add from "+ r.RemoteAddr + " or if proxied "+r.Header.Get("X-Forwarded-For"))
+		if err4 != nil {
+			log.Fatalf("Error logging to file: %v", err4)
 		}
+		return
+	}
+
+	if !validUser {
+		//User is not valid for some reason... Check the JWT validation logic
 		return
 	}
 
@@ -162,6 +214,7 @@ func addDataHandler(w http.ResponseWriter, r *http.Request) {
 	var newData struct {
 		Name     string   `json:"name"`
 		Type     string   `json:"type"`
+		Username     string   `json:"username"`
 		System   string   `json:"system"`
 		Tags     []string `json:"tags"`
 	}
@@ -173,8 +226,9 @@ func addDataHandler(w http.ResponseWriter, r *http.Request) {
 	// Insert data into DB
 	tags := strings.Join(newData.Tags, ",")
 	_, err = db.Exec("INSERT INTO data (name, type, username, system, tags) VALUES (?, ?, ?, ?, ?)",
-		newData.Name, newData.Type, claims.Username, newData.System, tags)
+		newData.Name, newData.Type, newData.Username, newData.System, tags)
 	if err != nil {
+		log.Println(err) 
 		http.Error(w, "Failed to insert data", http.StatusInternalServerError)
 		return
 	}
@@ -189,6 +243,7 @@ func addDataHandler(w http.ResponseWriter, r *http.Request) {
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	response, err := json.Marshal(payload)
 	if err != nil {
+		log.Println(err) 
 		http.Error(w, "Error marshaling JSON", http.StatusInternalServerError)
 		return
 	}
@@ -207,17 +262,24 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	// Validate JWT
 	authHeader := r.Header.Get("Authorization")
 	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-	claims, err := validateJWT(tokenStr)
+	validUser, err := validateJWT(tokenStr)
 	if err != nil {
+		log.Println(err) 
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		err =: LogToFile("webauth.log", "SEARCH 401: Unauthorized search from "+ r.RemoteAddr + " or if proxied "+r.Header.Get("X-Forwarded-For"))
-		if err != nil {
-			log.Fatalf("Error logging to file: %v", err)
+		err4 := LogToFile("webauth.log", "ADD DATA 401: Unauthorized add from "+ r.RemoteAddr + " or if proxied "+r.Header.Get("X-Forwarded-For"))
+		if err4 != nil {
+			log.Fatalf("Error logging to file: %v", err4)
 		}
 		return
 	}
 
+	if !validUser {
+		//User is not valid for some reason... Check the JWT validation logic
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
+	//SEARCH LOGIC HERE
 
 }
 
@@ -259,6 +321,9 @@ func main() {
 	http.HandleFunc("/api/login", loginHandler)
 	http.HandleFunc("/api/data", addDataHandler)
 	http.HandleFunc("/api/search", searchHandler)
+
+	// Serve Static HTML
+	http.Handle("/", http.FileServer(http.Dir("./html")))
 
 	// Start server
 	port := os.Getenv("PORT")
