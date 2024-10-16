@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Data</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+        }
+
+        .top-bar {
+            background-color: #f8f8f8;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ccc;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .top-bar-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .top-bar-buttons button {
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .top-bar-buttons .add-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .top-bar-buttons .profile-button,
+        .top-bar-buttons .logout-button {
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .sidebar {
+            background-color: #2c3e50;
+            color: white;
+            width: 200px;
+            padding-top: 60px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+        }
+
+        .sidebar .category-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            text-align: left;
+            background-color: #34495e;
+            color: white;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            border-bottom: 1px solid #1a252f;
+        }
+
+        .sidebar .category-button:hover {
+            background-color: #1abc9c;
+        }
+
+        /* Main Content Styling */
+        .main-content {
+            margin-left: 200px;
+            padding: 70px 20px 20px 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .data-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .data-form h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .data-form label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .data-form input[type="text"], 
+        .data-form select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .autocomplete-suggestions {
+            border: 1px solid #ccc;
+            background-color: #fff;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: -10px;
+            position: absolute;
+            width: calc(100% - 20px);
+        }
+
+        .autocomplete-suggestion {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .autocomplete-suggestion:hover {
+            background-color: #eee;
+        }
+
+        .data-form button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .data-form button:hover {
+            background-color: #0056b3;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="logo">Credman</div>
+        <div class="top-bar-buttons">
+            <button class="add-button">Add</button>
+            <button class="profile-button">Profile</button>
+            <button class="logout-button">Logout</button>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <button class="category-button" onclick="navigateTo('home.html')">Search</button>
+        <button class="category-button" onclick="navigateTo('hashes.html')">Hashes</button>
+        <button class="category-button" onclick="navigateTo('tools.html')">Tools</button>
+        <button class="category-button" onclick="navigateTo('tags.html')">Tags</button>
+        <button class="category-button" onclick="navigateTo('check.html')">Check</button>
+        <button class="category-button" onclick="navigateTo('update.html')">Update</button>
+        <button class="category-button" onclick="navigateTo('engagement.html')">Engagement</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="data-form">
+            <h2>Add Data to Database</h2>
+
+            <label for="name">Name</label>
+            <input type="text" id="name" placeholder="Name">
+
+            <label for="type">Type</label>
+            <select id="type">
+                <option value="password">Password</option>
+                <option value="hash">Hash</option>
+                <option value="key">Key</option>
+                <option value="token">Token</option>
+            </select>
+
+            <label for="username">Username</label>
+            <input type="text" id="username" placeholder="Username">
+
+            <label for="system">System</label>
+            <input type="text" id="system" placeholder="IP or Domain...">
+
+            <label for="tags">Tags</label>
+            <input type="text" id="tags" placeholder="Enter tags" oninput="lookupTags()">
+            <div class="autocomplete-suggestions" id="suggestions"></div>
+
+            <button type="submit" onclick="submitData()">Submit Data</button>
+        </div>
+    </div>
+
+    <script>
+        function lookupTags() {
+            const query = document.getElementById('tags').value;
+            if (query.length < 2) {
+                document.getElementById('suggestions').innerHTML = '';
+                return;
+            }
+
+            // Example of API call for tag lookup
+            fetch(`https://example.com/api/tags?query=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    let suggestions = '';
+                    data.forEach(tag => {
+                        suggestions += `<div class="autocomplete-suggestion" onclick="selectTag('${tag}')">${tag}</div>`;
+                    });
+                    document.getElementById('suggestions').innerHTML = suggestions;
+                })
+                .catch(error => console.error('Error fetching tags:', error));
+        }
+
+        function selectTag(tag) {
+            document.getElementById('tags').value = tag;
+            document.getElementById('suggestions').innerHTML = '';
+        }
+
+        function submitData() {
+            const name = document.getElementById('name').value;
+            const type = document.getElementById('type').value;
+            const username = document.getElementById('username').value;
+            const system = document.getElementById('system').value;
+            const tags = document.getElementById('tags').value;
+
+            const data = {
+                name: name,
+                type: type,
+                username: username,
+                system: system,
+                tags: tags
+            };
+
+            // Example of API call to submit the data
+            fetch('https://example.com/api/data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert('Data submitted successfully');
+                console.log(result);
+            })
+            .catch(error => console.error('Error submitting data:', error));
+        }
+
+        function navigateTo(page) {
+            // Navigate to the specified page
+            window.location.href = page;
+        }
+
+        function logout() {
+            // This is where you can add your logout logic (like clearing user session)
+            alert('Logging out...');
+            window.location.href = 'login.html';  // Redirect to a login page (if applicable)
+        }
+
+    </script>
+
+</body>
+</html>

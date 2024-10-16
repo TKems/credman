@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        /* Reset some basic styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Top Bar Styling */
+        .top-bar {
+            background-color: #f8f8f8;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ccc;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .top-bar-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .top-bar-buttons button {
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .top-bar-buttons .add-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .top-bar-buttons .profile-button,
+        .top-bar-buttons .logout-button {
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            background-color: #2c3e50;
+            color: white;
+            width: 200px;
+            padding-top: 60px; /* Offset for the top bar */
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+        }
+
+        .sidebar .category-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            text-align: left;
+            background-color: #34495e;
+            color: white;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            border-bottom: 1px solid #1a252f;
+        }
+
+        .sidebar .category-button:hover {
+            background-color: #1abc9c;
+        }
+
+        /* Main Content Styling */
+        .main-content {
+            margin-left: 200px; /* Sidebar width */
+            padding: 70px 20px 20px 20px; /* Offset for the top bar */
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .search-bar {
+            margin-bottom: 20px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        /* Data Table Styling */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+        }
+
+        .data-table th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="logo">Credman</div>
+        <div class="top-bar-buttons">
+            <button class="add-button" onclick="navigateTo('add.html')">Add</button>
+            <button class="profile-button" onclick="navigateTo('profile.html')">Profile</button>
+            <button class="logout-button" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <button class="category-button" onclick="navigateTo('home.html')">Search</button>
+        <button class="category-button" onclick="navigateTo('hashes.html')">Hashes</button>
+        <button class="category-button" onclick="navigateTo('tools.html')">Tools</button>
+        <button class="category-button" onclick="navigateTo('tags.html')">Tags</button>
+        <button class="category-button" onclick="navigateTo('check.html')">Check</button>
+        <button class="category-button" onclick="navigateTo('update.html')">Update</button>
+        <button class="category-button" onclick="navigateTo('engagement.html')">Engagement</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Search Bar -->
+        <div class="search-bar">
+            <input type="text" placeholder="Search..." id="searchInput" onkeyup="filterTable()">
+        </div>
+
+        <!-- Data Table -->
+        <table class="data-table" id="dataTable" onload="fetchTableData()">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Plaintext</th>
+                    <th>Type</th>
+                    <th>Tags</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Data 1A</td>
+                    <td>Data 1B</td>
+                    <td>Data 1C</td>
+                    <td>Data 1D</td>
+                </tr>
+                <tr>
+                    <td>Data 2A</td>
+                    <td>Data 2B</td>
+                    <td>Data 2C</td>
+                    <td>Data 2D</td>
+                </tr>
+                <tr>
+                    <td>Data 3A</td>
+                    <td>Data 3B</td>
+                    <td>Data 3C</td>
+                    <td>Data 3D</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function filterTable() {
+            let input = document.getElementById('searchInput').value.toUpperCase();
+            let table = document.getElementById('dataTable');
+            let tr = table.getElementsByTagName('tr');
+            
+            for (let i = 1; i < tr.length; i++) {
+                let td = tr[i].getElementsByTagName('td');
+                let match = false;
+                for (let j = 0; j < td.length; j++) {
+                    if (td[j].innerText.toUpperCase().indexOf(input) > -1) {
+                        match = true;
+                        break;
+                    }
+                }
+                tr[i].style.display = match ? "" : "none";
+            }
+        }
+
+        function navigateTo(page) {
+            // Navigate to the specified page
+            window.location.href = page;
+        }
+
+        function logout() {
+            // This is where you can add your logout logic (like clearing user session)
+            alert('Logging out...');
+            window.location.href = 'login.html';  // Redirect to a login page (if applicable)
+        }
+
+
+        window.onload = async function fetchTableData() {
+            const tbody = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+            tbody.innerHTML = ''; // Clear previous results
+
+            const url = `/search?query=`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+                displayResults(data);
+            } catch (error) {
+                console.error('There was a problem with the fetch operation:', error);
+            }
+
+        }
+
+        function displayResults(data) {
+            const tbody = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+            tbody.innerHTML = ''; // Clear previous results
+
+            data.forEach(item => {
+                const row = tbody.insertRow();
+                const cellId = row.insertCell(0);
+                const cellName = row.insertCell(1);
+                const cellDescription = row.insertCell(2);
+
+                cellId.textContent = item.id;
+                cellName.textContent = item.name;
+                cellDescription.textContent = item.description;
+            });
+        }
+
+        document.getElementById('searchInput').addEventListener('keyup', async () => {
+            const query = document.getElementById('searchInput').value;
+            const url = `/search?query=${encodeURIComponent(query)}`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+                displayResults(data);
+            } catch (error) {
+                console.error('There was a problem with the fetch operation:', error);
+            }
+        });
+
+
+
+    </script>
+
+</body>
+</html>

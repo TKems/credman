@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Tags to Data</title>
+    <style>
+        /* Reuse of previous styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+        }
+
+        .top-bar {
+            background-color: #f8f8f8;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ccc;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .top-bar-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .top-bar-buttons button {
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .top-bar-buttons .add-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .top-bar-buttons .profile-button,
+        .top-bar-buttons .logout-button {
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .sidebar {
+            background-color: #2c3e50;
+            color: white;
+            width: 200px;
+            padding-top: 60px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+        }
+
+        .sidebar .category-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            text-align: left;
+            background-color: #34495e;
+            color: white;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            border-bottom: 1px solid #1a252f;
+        }
+
+        .sidebar .category-button:hover {
+            background-color: #1abc9c;
+        }
+
+        /* Main Content Styling */
+        .main-content {
+            margin-left: 200px;
+            padding: 70px 20px 20px 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .tag-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .tag-form h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .tag-form label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .tag-form input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .tag-form .data-row {
+            margin-bottom: 30px;
+        }
+
+        .tag-form button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .tag-form button:hover {
+            background-color: #0056b3;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="logo">Credman</div>
+        <div class="top-bar-buttons">
+            <button class="add-button" onclick="navigateTo('add.html')">Add</button>
+            <button class="profile-button" onclick="navigateTo('profile.html')">Profile</button>
+            <button class="logout-button" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <button class="category-button" onclick="navigateTo('home.html')">Search</button>
+        <button class="category-button" onclick="navigateTo('hashes.html')">Hashes</button>
+        <button class="category-button" onclick="navigateTo('tools.html')">Tools</button>
+        <button class="category-button" onclick="navigateTo('tags.html')">Tags</button>
+        <button class="category-button" onclick="navigateTo('check.html')">Check</button>
+        <button class="category-button" onclick="navigateTo('update.html')">Update</button>
+        <button class="category-button" onclick="navigateTo('engagement.html')">Engagement</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="tag-form">
+            <h2>Add Tags to Data Values</h2>
+            <div class="data-row">
+                <label for="data1">Data Value 1</label>
+                <input type="text" id="data1" placeholder="Enter tags for Data Value 1 (comma-separated)">
+            </div>
+            <div class="data-row">
+                <label for="data2">Data Value 2</label>
+                <input type="text" id="data2" placeholder="Enter tags for Data Value 2 (comma-separated)">
+            </div>
+            <div class="data-row">
+                <label for="data3">Data Value 3</label>
+                <input type="text" id="data3" placeholder="Enter tags for Data Value 3 (comma-separated)">
+            </div>
+            <div class="data-row">
+                <label for="data4">Data Value 4</label>
+                <input type="text" id="data4" placeholder="Enter tags for Data Value 4 (comma-separated)">
+            </div>
+            <button type="submit" onclick="submitTags()">Submit Tags</button>
+        </div>
+    </div>
+
+    <script>
+        function submitTags() {
+            let tags1 = document.getElementById('data1').value;
+            let tags2 = document.getElementById('data2').value;
+            let tags3 = document.getElementById('data3').value;
+            let tags4 = document.getElementById('data4').value;
+
+            // This is where you'd send the tags data to a server or handle it in some way.
+            alert('Tags submitted:\n' +
+                'Data 1: ' + tags1 + '\n' +
+                'Data 2: ' + tags2 + '\n' +
+                'Data 3: ' + tags3 + '\n' +
+                'Data 4: ' + tags4);
+        }
+
+        function navigateTo(page) {
+            // Navigate to the specified page
+            window.location.href = page;
+        }
+
+        function logout() {
+            // This is where you can add your logout logic (like clearing user session)
+            alert('Logging out...');
+            window.location.href = 'login.html';  // Redirect to a login page (if applicable)
+        }
+
+    </script>
+
+</body>
+</html>
