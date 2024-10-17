@@ -186,7 +186,7 @@
             <h2>Add Data to Database</h2>
 
             <label for="name">Name</label>
-            <input type="text" id="name" placeholder="Name">
+            <input type="text" id="name" placeholder="Name" required>
 
             <label for="type">Type</label>
             <select id="type">
@@ -194,6 +194,7 @@
                 <option value="hash">Hash</option>
                 <option value="key">Key</option>
                 <option value="token">Token</option>
+                <option value="other">Other/Misc</option>
             </select>
 
             <label for="username">Username</label>
@@ -201,6 +202,34 @@
 
             <label for="system">System</label>
             <input type="text" id="system" placeholder="IP or Domain...">
+
+            <label for="service">Service</label>
+            <input type="text" id="service" placeholder="SSH, RDP, AD...">
+
+            <label for="tsi">Team Specific Info - TSI?</label>
+            <select id="tsi">
+                <option value="1">Yes, matches format</option>
+                <option value="0">No</option>
+            </select>
+
+            <label for="shared">Is this credential shared between teams?</label>
+            <select id="shared">
+                <option value="1">Yes</option>
+                <option value="0">No</option>
+            </select>
+
+            <label for="teamnum">Team number</label>
+            <input type="number" id="teamnum" placeholder="Team number only">
+
+            <label for="value">Credential or Value</label>
+            <input type="text" id="value" placeholder="Password, hash, key..." required>
+
+
+            <label for="cracked">Cracked?</label>
+            <select id="cracked">
+                <option value="1">Yes, hash is known or is plaintext password</option>
+                <option value="0">No</option>
+            </select>
 
             <label for="tags">Tags</label>
             <input type="text" id="tags" placeholder="Enter tags" oninput="lookupTags()">
@@ -211,6 +240,27 @@
     </div>
 
     <script>
+
+        // Get cookie via name
+        function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        //Check Auth and redirect if token cookie missing
+        window.onload = async function checkForToken() {
+
+            // Check if the 'token' cookie is set
+            tokenCheck = getCookie('token');
+
+            // Redirect if the 'token' cookie is not set
+            if (!tokenCheck) {
+                window.location.href = 'login.html';
+            }
+        }
+
+
         function lookupTags() {
             const query = document.getElementById('tags').value;
             if (query.length < 2) {
@@ -219,7 +269,8 @@
             }
 
             // Example of API call for tag lookup
-            fetch(`https://example.com/api/tags?query=${query}`)
+            //TODO
+            fetch(`/api/tags?query=${query}`)
                 .then(response => response.json())
                 .then(data => {
                     let suggestions = '';
@@ -241,6 +292,12 @@
             const type = document.getElementById('type').value;
             const username = document.getElementById('username').value;
             const system = document.getElementById('system').value;
+            const service = document.getElementById('service').value;
+            const tsi = document.getElementById('tsi').value;
+            const shared = document.getElementById('shared').value;
+            const teamnum = document.getElementById('teamnum').value;
+            const value = document.getElementById('value').value;
+            const cracked = document.getElementById('cracked').value;
             const tags = document.getElementById('tags').value;
 
             const data = {
@@ -248,21 +305,30 @@
                 type: type,
                 username: username,
                 system: system,
+                service: service,
+                tsi: tsi,
+                shared: shared,
+                teamnum: teamnum,
+                value: value,
+                cracked: cracked,
                 tags: tags
             };
 
+            console.log(JSON.stringify(data));
+
             // Example of API call to submit the data
-            fetch('https://example.com/api/data', {
+            fetch('/api/data', {
                 method: 'POST',
                 headers: {
+                    'Authorization': 'Bearer '+ getCookie('token'),
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(data)
             })
             .then(response => response.json())
             .then(result => {
-                alert('Data submitted successfully');
                 console.log(result);
+                navigateTo("/index.html")
             })
             .catch(error => console.error('Error submitting data:', error));
         }
@@ -273,9 +339,9 @@
         }
 
         function logout() {
-            // This is where you can add your logout logic (like clearing user session)
-            alert('Logging out...');
-            window.location.href = 'login.html';  // Redirect to a login page (if applicable)
+            // Remove cookie by setting expire time
+            document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            window.location.href = 'login.html';
         }
 
     </script>

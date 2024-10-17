@@ -114,7 +114,7 @@ func validateUserInDB(username string) bool {
 
 	// Query the user by ID
 	var user User
-	err := db.QueryRow("SELECT id, email, username FROM users WHERE username = ?", username).Scan(&user.ID, &user.Email, &user.Username)
+	err := db.QueryRow("SELECT id, username FROM users WHERE username = ?", username).Scan(&user.ID, &user.Username)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -216,17 +216,24 @@ func addDataHandler(w http.ResponseWriter, r *http.Request) {
 		Type     string   `json:"type"`
 		Username     string   `json:"username"`
 		System   string   `json:"system"`
-		Tags     []string `json:"tags"`
+		Service   string   `json:"service"`
+		Shared   string   `json:"shared"`
+		TSI   string   `json:"tsi"`
+		TeamNum   string   `json:"teamnum"`
+		Value   string   `json:"value"`
+		Cracked   string   `json:"cracked"`
+		Tags     string `json:"tags"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&newData); err != nil {
+		log.Println(err) 
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	// Insert data into DB
-	tags := strings.Join(newData.Tags, ",")
-	_, err = db.Exec("INSERT INTO data (name, type, username, system, tags) VALUES (?, ?, ?, ?, ?)",
-		newData.Name, newData.Type, newData.Username, newData.System, tags)
+	
+	_, err = db.Exec("INSERT INTO data (name, type, username, system, service, shared, tsi, teamnum, value, cracked, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		newData.Name, newData.Type, newData.Username, newData.System, newData.Service, newData.Shared, newData.TSI, newData.TeamNum, newData.Value, newData.Cracked, newData.Tags)
 	if err != nil {
 		log.Println(err) 
 		http.Error(w, "Failed to insert data", http.StatusInternalServerError)
@@ -279,7 +286,98 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//SEARCH LOGIC HERE
+	type SearchResults struct {
+		ID    int    `json:"id"`
+		Name  string `json:"name"`
+		Type string `json:"type"`
+		Username string `json:"username"`
+		System string `json:"system"`
+		Service string `json:"service"`
+		TeamNum string `json:"teamnum"`
+		Value   string   `json:"value"`
+	}
+
+	// Parse query parameters
+	searchTerm := r.URL.Query().Get("q")
+	
+	if searchTerm == "" {
+		// Return all results if query is empty
+		query := `
+		SELECT id, name, type, username, system, service, teamnum, value 
+		FROM data
+		`
+		rows, err := db.Query(query)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		defer rows.Close()
+
+		// Create a slice to hold the results
+		var results []SearchResults
+
+		// Iterate over the rows and scan the data into the struct
+		for rows.Next() {
+			var result SearchResults
+			err = rows.Scan(&result.ID, &result.Name, &result.Type, &result.Username, &result.System, &result.Service, &result.TeamNum, &result.Value)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			results = append(results, result)
+		}
+
+		// Check for errors during row iteration
+		if err = rows.Err(); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Convert the results to JSON
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(results)
+		return
+	}
+
+	// SEARCH LOGIC HERE
+
+	// Query the database for matching values across columns
+	query := `
+		SELECT id, name, type, username, system, service, teamnum, value 
+		FROM data 
+		WHERE name LIKE ? OR type LIKE ? OR username LIKE ? OR system LIKE ? OR service LIKE ? OR teamnum LIKE ? OR value LIKE ?
+	`
+	rows, err := db.Query(query, "%"+searchTerm+"%", "%"+searchTerm+"%", "%"+searchTerm+"%", "%"+searchTerm+"%", "%"+searchTerm+"%", "%"+searchTerm+"%", "%"+searchTerm+"%")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	// Create a slice to hold the results
+	var results []SearchResults
+
+	// Iterate over the rows and scan the data into the struct
+	for rows.Next() {
+		var result SearchResults
+		err = rows.Scan(&result.ID, &result.Name, &result.Type, &result.Username, &result.System, &result.Service, &result.TeamNum, &result.Value)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		results = append(results, result)
+	}
+
+	// Check for errors during row iteration
+	if err = rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Convert the results to JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
 
 }
 

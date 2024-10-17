@@ -142,9 +142,9 @@
                 const token = data.token; // Assuming the token is returned as 'token' in the response body
 
                 // Set JWT token as a cookie, valid for 1 day
-                setCookie('jwt', token, 1);
+                setCookie('token', token, 1);
 
-                console.log('Login successful, JWT token set in cookie');
+                console.log('Login successful, token set in cookie');
             } catch (error) {
                 console.error('Error:', error);
             }
