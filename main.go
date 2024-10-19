@@ -7,13 +7,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 	"time"
-	"runtime"
 
 	"github.com/golang-jwt/jwt/v5"
-	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
+	_ "modernc.org/sqlite"
 )
 
 // Define JWT Secret Key
@@ -24,11 +24,11 @@ var db *sql.DB
 
 // Structs
 type User struct {
-	ID       int    `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	PasswordHash string `json:"passwordhash"`
-	ApiKey   string `json:"api_key"`
+	ID            int    `json:"id"`
+	Username      string `json:"username"`
+	Email         string `json:"email"`
+	PasswordHash  string `json:"passwordhash"`
+	ApiKey        string `json:"api_key"`
 	Authenticator []byte `json:"authenticator"` //Future Passkey option
 }
 
@@ -84,7 +84,7 @@ func validateJWT(tokenStr string) (bool, error) {
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 		return []byte(jwtSecret), nil
 	})
-	
+
 	claims := token.Claims.(jwt.MapClaims)
 	if err != nil || !token.Valid {
 		return false, err
@@ -151,9 +151,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	row := db.QueryRow("SELECT username, passwordhash FROM users WHERE username = ?", loginData.Username)
 	err := row.Scan(&user.Username, &user.PasswordHash)
 	if err != nil {
-		log.Println(err) 
+		log.Println(err)
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
-		err2 := LogToFile("webauth.log", "LOGIN Bad or Unknown Username 401: Unauthorized login attempt from "+ r.RemoteAddr + " or if proxied "+r.Header.Get("X-Forwarded-For"))
+		err2 := LogToFile("webauth.log", "LOGIN Bad or Unknown Username 401: Unauthorized login attempt from "+r.RemoteAddr+" or if proxied "+r.Header.Get("X-Forwarded-For"))
 		if err2 != nil {
 			log.Fatalf("Error logging to file: %v", err2)
 		}
@@ -162,9 +162,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !checkPasswordHash(loginData.Password, user.PasswordHash) {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
-		err3 := LogToFile("webauth.log", "LOGIN Bad or Unknown Password 401: Unauthorized login attempt from "+ r.RemoteAddr + " or if proxied "+r.Header.Get("X-Forwarded-For"))
+		err3 := LogToFile("webauth.log", "LOGIN Bad or Unknown Password 401: Unauthorized login attempt from "+r.RemoteAddr+" or if proxied "+r.Header.Get("X-Forwarded-For"))
 		if err3 != nil {
-			log.Println(err3) 
+			log.Println(err3)
 			log.Fatalf("Error logging to file: %v", err3)
 		}
 		return
@@ -196,9 +196,9 @@ func addDataHandler(w http.ResponseWriter, r *http.Request) {
 	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 	validUser, err := validateJWT(tokenStr)
 	if err != nil {
-		log.Println(err) 
+		log.Println(err)
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		err4 := LogToFile("webauth.log", "ADD DATA 401: Unauthorized add from "+ r.RemoteAddr + " or if proxied "+r.Header.Get("X-Forwarded-For"))
+		err4 := LogToFile("webauth.log", "ADD DATA 401: Unauthorized add from "+r.RemoteAddr+" or if proxied "+r.Header.Get("X-Forwarded-For"))
 		if err4 != nil {
 			log.Fatalf("Error logging to file: %v", err4)
 		}
@@ -212,30 +212,30 @@ func addDataHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Decode request body
 	var newData struct {
-		Name     string   `json:"name"`
-		Type     string   `json:"type"`
-		Username     string   `json:"username"`
-		System   string   `json:"system"`
-		Service   string   `json:"service"`
-		Shared   string   `json:"shared"`
-		TSI   string   `json:"tsi"`
-		TeamNum   string   `json:"teamnum"`
-		Value   string   `json:"value"`
-		Cracked   string   `json:"cracked"`
+		Name     string `json:"name"`
+		Type     string `json:"type"`
+		Username string `json:"username"`
+		System   string `json:"system"`
+		Service  string `json:"service"`
+		Shared   string `json:"shared"`
+		TSI      string `json:"tsi"`
+		TeamNum  string `json:"teamnum"`
+		Value    string `json:"value"`
+		Cracked  string `json:"cracked"`
 		Tags     string `json:"tags"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&newData); err != nil {
-		log.Println(err) 
+		log.Println(err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	// Insert data into DB
-	
+
 	_, err = db.Exec("INSERT INTO data (name, type, username, system, service, shared, tsi, teamnum, value, cracked, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		newData.Name, newData.Type, newData.Username, newData.System, newData.Service, newData.Shared, newData.TSI, newData.TeamNum, newData.Value, newData.Cracked, newData.Tags)
 	if err != nil {
-		log.Println(err) 
+		log.Println(err)
 		http.Error(w, "Failed to insert data", http.StatusInternalServerError)
 		return
 	}
@@ -250,7 +250,7 @@ func addDataHandler(w http.ResponseWriter, r *http.Request) {
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	response, err := json.Marshal(payload)
 	if err != nil {
-		log.Println(err) 
+		log.Println(err)
 		http.Error(w, "Error marshaling JSON", http.StatusInternalServerError)
 		return
 	}
@@ -258,7 +258,6 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.WriteHeader(code)
 	w.Write(response)
 }
-
 
 func searchHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -271,9 +270,9 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 	validUser, err := validateJWT(tokenStr)
 	if err != nil {
-		log.Println(err) 
+		log.Println(err)
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		err4 := LogToFile("webauth.log", "ADD DATA 401: Unauthorized add from "+ r.RemoteAddr + " or if proxied "+r.Header.Get("X-Forwarded-For"))
+		err4 := LogToFile("webauth.log", "ADD DATA 401: Unauthorized add from "+r.RemoteAddr+" or if proxied "+r.Header.Get("X-Forwarded-For"))
 		if err4 != nil {
 			log.Fatalf("Error logging to file: %v", err4)
 		}
@@ -287,19 +286,19 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type SearchResults struct {
-		ID    int    `json:"id"`
-		Name  string `json:"name"`
-		Type string `json:"type"`
+		ID       int    `json:"id"`
+		Name     string `json:"name"`
+		Type     string `json:"type"`
 		Username string `json:"username"`
-		System string `json:"system"`
-		Service string `json:"service"`
-		TeamNum string `json:"teamnum"`
-		Value   string   `json:"value"`
+		System   string `json:"system"`
+		Service  string `json:"service"`
+		TeamNum  string `json:"teamnum"`
+		Value    string `json:"value"`
 	}
 
 	// Parse query parameters
 	searchTerm := r.URL.Query().Get("q")
-	
+
 	if searchTerm == "" {
 		// Return all results if query is empty
 		query := `
@@ -380,7 +379,6 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(results)
 
 }
-
 
 // LogToFile appends log messages to a specified log file.
 func LogToFile(logFile string, msg string) error {
