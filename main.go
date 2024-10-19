@@ -40,7 +40,7 @@ type Claims struct {
 
 // Helper: Connect to SQLite database
 func connectDB() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "./database.db")
+	db, err := sql.Open("sqlite", "./database.db")
 	if err != nil {
 		return nil, err
 	}
