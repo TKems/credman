@@ -251,7 +251,7 @@
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
-                console.log(response.body);
+                //console.log(response.body);
                 const data = await response.json();
                 displayResults(data);
             } catch (error) {

@@ -123,6 +123,11 @@
             document.cookie = name + "=" + (value || "") + expires + "; path=/";
         }
 
+        function navigateTo(page) {
+            // Navigate to the specified page
+            window.location.href = page;
+        }
+
         // Function to log in and store JWT token in a cookie
         async function login(username, password) {
             try {
@@ -143,8 +148,10 @@
 
                 // Set JWT token as a cookie, valid for 1 day
                 setCookie('token', token, 1);
-
+                navigateTo("index.html");
                 console.log('Login successful, token set in cookie');
+
+
             } catch (error) {
                 console.error('Error:', error);
             }
