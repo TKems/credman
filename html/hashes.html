@@ -153,20 +153,16 @@
 
     <!-- Main Content -->
     <div class="main-content">
-        <!-- Search Bar -->
-        <div class="search-bar">
-            <input type="text" placeholder="Search..." id="searchInput" onkeyup="filterTable()">
-        </div>
 
         <!-- Hash Data Table -->
         <table class="data-table" id="dataTable" onload="fetchTableData()">
             <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Name</th>
                     <th>Hash</th>
                     <th>Team Number</th>
                     <th>System</th>
-                    <th>Tags</th>
                 </tr>
             </thead>
             <tbody>
@@ -176,20 +172,6 @@
                     <td>Data 1C</td>
                     <td>Data 1D</td>
                     <td>Data 1E</td>
-                </tr>
-                <tr>
-                    <td>Data 2A</td>
-                    <td>Data 2B</td>
-                    <td>Data 2C</td>
-                    <td>Data 2D</td>
-                    <td>Data 2E</td>
-                </tr>
-                <tr>
-                    <td>Data 3A</td>
-                    <td>Data 3B</td>
-                    <td>Data 3C</td>
-                    <td>Data 3D</td>
-                    <td>Data 3E</td>
                 </tr>
             </tbody>
         </table>
@@ -247,11 +229,11 @@
             const tbody = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
             tbody.innerHTML = ''; // Clear previous results
 
-            const url = `/search?query=`;
+            const url = `/api/hashes`;
 
             try {
                 const response = await fetch(url, { 
-                        method: 'post', 
+                        method: 'POST', 
                         headers: new Headers({
                             'Authorization': 'Bearer '+ getCookie('token') 
                         }), 
@@ -274,31 +256,19 @@
 
             data.forEach(item => {
                 const row = tbody.insertRow();
-                const cellId = row.insertCell(0);
-                const cellName = row.insertCell(1);
-                const cellDescription = row.insertCell(2);
+                const cellID = row.insertCell();
+                const cellName = row.insertCell();
+                const cellHash = row.insertCell();
+                const cellTeamNumber = row.insertCell();
+                const cellSystem = row.insertCell();
 
-                cellId.textContent = item.id;
+                cellID.textContent = item.id;
                 cellName.textContent = item.name;
-                cellDescription.textContent = item.description;
+                cellHash.textContent = item.value;
+                cellTeamNumber.textContent = item.teamnum;
+                cellSystem.textContent = item.system;
             });
         }
-
-        document.getElementById('searchInput').addEventListener('keyup', async () => {
-            const query = document.getElementById('searchInput').value;
-            const url = `/search?query=${encodeURIComponent(query)}`;
-
-            try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                const data = await response.json();
-                displayResults(data);
-            } catch (error) {
-                console.error('There was a problem with the fetch operation:', error);
-            }
-        });
 
 
 

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engagement</title>
+    <style>
+        /* Reset some basic styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Top Bar Styling */
+        .top-bar {
+            background-color: #f8f8f8;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ccc;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .top-bar-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .top-bar-buttons button {
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .top-bar-buttons .add-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .top-bar-buttons .profile-button,
+        .top-bar-buttons .logout-button {
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            background-color: #2c3e50;
+            color: white;
+            width: 200px;
+            padding-top: 60px; /* Offset for the top bar */
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+        }
+
+        .sidebar .category-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            text-align: left;
+            background-color: #34495e;
+            color: white;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            border-bottom: 1px solid #1a252f;
+        }
+
+        .sidebar .category-button:hover {
+            background-color: #1abc9c;
+        }
+
+        /* Main Content Styling */
+        .main-content {
+            margin-left: 200px; /* Sidebar width */
+            padding: 70px 20px 20px 20px; /* Offset for the top bar */
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .search-bar {
+            margin-bottom: 20px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        /* Data Table Styling */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+        }
+
+        .data-table th {
+            background-color: #f4f4f4;
+        }
+
+        .checkbox-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-item input {
+            /* Remove the default checkbox appearance */
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #ccc;
+            display: inline-block;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .checkbox-item input:checked {
+            background-color: #4285f4; /* Blue color for checked state */
+            border-color: #4285f4;
+        }
+
+        .checkbox-item input:checked::before {
+            content: '✔';
+            color: white;
+            font-size: 18px;
+            position: absolute;
+            top: 2px;
+            left: 6px;
+        }
+
+        .checkbox-item label {
+            margin-left: 10px;
+        }
+
+
+
+    </style>
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="logo">Credman</div>
+        <div class="top-bar-buttons">
+            <button class="add-button" onclick="navigateTo('add.html')">Add</button>
+            <button class="profile-button" onclick="navigateTo('profile.html')">Profile</button>
+            <button class="logout-button" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <button class="category-button" onclick="navigateTo('index.html')">Search</button>
+        <button class="category-button" onclick="navigateTo('hashes.html')">Hashes</button>
+        <button class="category-button" onclick="navigateTo('tools.html')">Tools</button>
+        <button class="category-button" onclick="navigateTo('tags.html')">Tags</button>
+        <button class="category-button" onclick="navigateTo('check.html')">Check</button>
+        <button class="category-button" onclick="navigateTo('update.html')">Update</button>
+        <button class="category-button" onclick="navigateTo('engagement.html')">Engagement</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div id="active-teams">
+            Active Teams:
+            <div class="checkbox-container" id="checkbox-container">
+
+            </div>
+        </div>
+        <div id="active-systems">
+            Active Systems:
+            <div class="systems-container" id="systems-container">
+
+            </div>
+        </div>
+        <div id="active-services">
+            Active Services:
+            <div class="services-container" id="services-container">
+
+            </div>
+
+        </div>
+        <div id="active-authtypes">
+            Active Auth Types:
+            <div class="authtypes-container" id="authtypes-container">
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        function navigateTo(page) {
+            // Navigate to the specified page
+            window.location.href = page;
+        }
+
+        function logout() {
+            //Set cookie expiration to a time in the past
+            document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            window.location.href = 'login.html'; 
+        }
+
+        // Get cookie via name
+        function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        const container = document.getElementById('checkbox-container');
+
+        // Function to create checkboxes
+        function createCheckboxes() {
+            for (let i = 1; i <= 40; i++) {
+                const checkboxItem = document.createElement('div');
+                checkboxItem.className = 'checkbox-item';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `checkbox-${i}`;
+                checkbox.name = `checkbox-${i}`;
+
+                const label = document.createElement('label');
+                label.htmlFor = `checkbox-${i}`;
+                label.innerText = `${i}`;
+
+                checkboxItem.appendChild(checkbox);
+                checkboxItem.appendChild(label);
+                container.appendChild(checkboxItem);
+            }
+        }
+
+        // Function to update checkboxes based on the API response
+        function updateCheckboxes(data) {
+            data.forEach(item => {
+                const checkbox = document.getElementById(`checkbox-${item.id}`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+        }
+
+        window.onload = async function fetchActiveTeams() {
+
+            // Check if the 'token' cookie is set
+            tokenCheck = getCookie('token');
+            
+            // Redirect if the 'token' cookie is not set
+            if (!tokenCheck) {
+                window.location.href = 'login.html';
+            }
+
+            createCheckboxes();
+
+            const url = `/api/activeteams`;
+
+            try {
+                const response = await fetch(url, { 
+                        method: 'POST', 
+                        headers: new Headers({
+                            'Authorization': 'Bearer '+ getCookie('token') 
+                        }), 
+                    });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                //console.log(response.body);
+                const data = await response.json();
+                updateCheckboxes(data);
+            } catch (error) {
+                console.error('There was a problem with the fetch operation:', error);
+            }
+
+        }
+
+    </script>
+
+</body>
+</html>
