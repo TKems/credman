@@ -1008,6 +1008,289 @@ func crackHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Tags API Handler that returns JSON of all tags
+func tagsHandler(w http.ResponseWriter, r *http.Request) {
+
+	// Only allow POST method
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Validate JWT
+	authHeader := r.Header.Get("Authorization")
+	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+	validUser, err := validateJWT(tokenStr)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		err4 := LogToFile("webauth.log", "ADD DATA 401: Unauthorized add from "+r.RemoteAddr+" or if proxied "+r.Header.Get("X-Forwarded-For"))
+		if err4 != nil {
+			log.Fatalf("Error logging to file: %v", err4)
+		}
+		return
+	}
+
+	if !validUser {
+		//User is not valid for some reason... Check the JWT validation logic
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	type Tags struct {
+		ID    int    `json:"id"`
+		Value string `json:"value"`
+	}
+
+	// Query to get all tags
+	query := `
+		SELECT id, value
+		FROM tags
+	`
+	rows, err := db.Query(query)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	// Create a slice to hold the results
+	var results []Tags
+
+	// Iterate over the rows and scan the data into the struct
+	for rows.Next() {
+		var result Tags
+		err = rows.Scan(&result.ID, &result.Value)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		results = append(results, result)
+	}
+
+	// Check for errors during row iteration
+	if err = rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Convert the results to JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
+
+}
+
+// Add tags handler (JWT protected)
+func addTagsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Validate JWT
+	authHeader := r.Header.Get("Authorization")
+	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+	validUser, err := validateJWT(tokenStr)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		err4 := LogToFile("webauth.log", "ADD DATA 401: Unauthorized add from "+r.RemoteAddr+" or if proxied "+r.Header.Get("X-Forwarded-For"))
+		if err4 != nil {
+			log.Fatalf("Error logging to file: %v", err4)
+		}
+		return
+	}
+
+	if !validUser {
+		//User is not valid for some reason... Check the JWT validation logic
+		return
+	}
+
+	// Decode request body
+	var newTags struct {
+		Value string `json:"value"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&newTags); err != nil {
+		log.Println(err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Insert tags into DB
+
+	_, err = db.Exec("INSERT INTO tags (value) VALUES (?)", newTags.Value)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Failed to insert tags", http.StatusInternalServerError)
+		return
+	}
+
+	// Respond with success
+	respondWithJSON(w, http.StatusOK, map[string]string{
+		"message": "Tag added successfully",
+	})
+}
+
+// getByID Handler
+func getByIDHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Validate JWT
+	authHeader := r.Header.Get("Authorization")
+	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+	validUser, err := validateJWT(tokenStr)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		err4 := LogToFile("webauth.log", "ADD DATA 401: Unauthorized add from "+r.RemoteAddr+" or if proxied "+r.Header.Get("X-Forwarded-For"))
+		if err4 != nil {
+			log.Fatalf("Error logging to file: %v", err4)
+		}
+		return
+	}
+
+	if !validUser {
+		//User is not valid for some reason... Check the JWT validation logic
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Data to return
+	type DBData struct {
+		ID       string `json:"id"`
+		Name     string `json:"name"`
+		Type     string `json:"type"`
+		Username string `json:"username"`
+		System   string `json:"system"`
+		Service  string `json:"service"`
+		Shared   string `json:"shared"`
+		TSI      string `json:"tsi"`
+		TeamNum  string `json:"teamnum"`
+		Value    string `json:"value"`
+		Cracked  string `json:"cracked"`
+		Tags     string `json:"tags"`
+	}
+
+	// Decode request body
+	var givenID struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&givenID); err != nil {
+		log.Println(err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Query the database for matching ID value
+	query := `
+		SELECT id, name, type, username, system, service, shared, tsi, teamnum, value, cracked, tags 
+		FROM data 
+		WHERE id=? LIMIT 1
+	`
+	rows, err := db.Query(query, givenID.ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	// Create a slice to hold the results
+	var results []DBData
+
+	// TODO: This could be removed since we only need to return one value. Leaving this just in case multi-ID support is added.
+	// Iterate over the rows and scan the data into the struct
+	for rows.Next() {
+		var result DBData
+		err = rows.Scan(&result.ID, &result.Name, &result.Type, &result.Username, &result.System, &result.Service, &result.Shared, &result.TSI, &result.TeamNum, &result.Value, &result.Cracked, &result.Tags)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		results = append(results, result)
+	}
+
+	// Check for errors during row iteration
+	if err = rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Convert the results to JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
+
+}
+
+// Update API Handler that updates entries from the update.html page.
+func updateHandler(w http.ResponseWriter, r *http.Request) {
+
+	// Only allow POST method
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Validate JWT
+	authHeader := r.Header.Get("Authorization")
+	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+	validUser, err := validateJWT(tokenStr)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		err4 := LogToFile("webauth.log", "ADD DATA 401: Unauthorized add from "+r.RemoteAddr+" or if proxied "+r.Header.Get("X-Forwarded-For"))
+		if err4 != nil {
+			log.Fatalf("Error logging to file: %v", err4)
+		}
+		return
+	}
+
+	if !validUser {
+		//User is not valid for some reason... Check the JWT validation logic
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Decode request body
+	var updateData struct {
+		ID       string `json:"id"`
+		Name     string `json:"name"`
+		Type     string `json:"type"`
+		Username string `json:"username"`
+		System   string `json:"system"`
+		Service  string `json:"service"`
+		Shared   string `json:"shared"`
+		TSI      string `json:"tsi"`
+		TeamNum  string `json:"teamnum"`
+		Value    string `json:"value"`
+		Cracked  string `json:"cracked"`
+		Tags     string `json:"tags"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&updateData); err != nil {
+		log.Println(err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Insert data into DB
+
+	_, err = db.Exec("UPDATE data SET name=?, type=?, username=?, system=?, service=?, shared=?, tsi=?, teamnum=?, value=?, cracked=?, tags=? WHERE id=?",
+		updateData.Name, updateData.Type, updateData.Username, updateData.System, updateData.Service, updateData.Shared, updateData.TSI, updateData.TeamNum, updateData.Value, updateData.Cracked, updateData.Tags, updateData.ID)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Failed to insert data", http.StatusInternalServerError)
+		return
+	}
+
+	// Respond with success
+	respondWithJSON(w, http.StatusOK, map[string]string{
+		"message": "Entry updated successfully",
+	})
+
+}
+
 func main() {
 	var err error
 	db, err = connectDB()
@@ -1021,16 +1304,26 @@ func main() {
 		log.Fatalf("Could not create the database: %v", err)
 	}
 
-	// Routes
+	// Main Routes
 	http.HandleFunc("/api/login", loginHandler)
 	http.HandleFunc("/api/data", addDataHandler)
 	http.HandleFunc("/api/search", searchHandler)
 	http.HandleFunc("/api/hashes", hashesHandler)
+	http.HandleFunc("/api/update", updateHandler)
+
+	// API/Extended Routes
 	http.HandleFunc("/api/crack", crackHandler)
+	http.HandleFunc("/api/getbyid", getByIDHandler)
+
+	// Engagement Routes (Setup)
 	http.HandleFunc("/api/activeteams", activeTeamsHandler)
 	http.HandleFunc("/api/systems", systemsHandler)
 	http.HandleFunc("/api/services", servicesHandler)
 	http.HandleFunc("/api/authtype", authtypeHandler)
+
+	// Tag Routes
+	http.HandleFunc("/api/tags", tagsHandler)
+	http.HandleFunc("/api/addtags", addTagsHandler)
 
 	// Serve Static HTML
 	http.Handle("/", http.FileServer(http.Dir("./html")))

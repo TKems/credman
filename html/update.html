@@ -183,7 +183,7 @@
     <!-- Main Content -->
     <div class="main-content">
         <div class="data-form">
-            <h2>Add Data to Database</h2>
+            <h2>Update Entry</h2>
 
             <label for="name">Name</label>
             <input type="text" id="name" placeholder="Name" required>
@@ -235,7 +235,7 @@
             <input type="text" id="tags" placeholder="Enter tags" oninput="lookupTags()">
             <div class="autocomplete-suggestions" id="suggestions"></div>
 
-            <button type="submit" onclick="submitData()">Submit Data</button>
+            <button type="submit" onclick="submitData()">Update Entry</button>
         </div>
     </div>
 
@@ -254,6 +254,51 @@
             window.location.href = 'login.html'; 
         }
 
+        function getAndFillData() {
+
+            // Get ID from URL param string (set by index page table logic)
+            const paramString = window.location.search;
+            const urlParams = new URLSearchParams(paramString);
+            if (urlParams.has('id')) {
+                givenID = urlParams.get('id');
+            } else {
+                // TODO: Add logic to support editing/updating IDs manually
+                // ID value was not provided, redirect to index page
+                navigateTo('index.html');
+            }            
+
+            
+
+            fetch('/api/getbyid', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer '+ getCookie('token'),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({"id": givenID})
+            })
+            .then(response => response.json())
+            .then(result => {
+                console.log(result);
+                data = result[0];
+                document.getElementById('name').value = data.name;
+                document.getElementById('type').value = data.type;
+                document.getElementById('username').value = data.username;
+                document.getElementById('system').value = data.system;
+                document.getElementById('service').value = data.service;
+                document.getElementById('tsi').value = data.tsi;
+                document.getElementById('shared').value = data.shared;
+                document.getElementById('teamnum').value = data.teamnum;
+                document.getElementById('value').value = data.value;
+                document.getElementById('cracked').value = data.cracked;
+                document.getElementById('tags').value = data.tags;
+            })
+            .catch(error => console.error('Error getting ID data:', error));
+
+
+        }
+
+
         //Check Auth and redirect if token cookie missing
         window.onload = async function checkForToken() {
 
@@ -264,9 +309,13 @@
             if (!tokenCheck) {
                 window.location.href = 'login.html';
             }
+
+            // Call function to get data from API and fill elements
+            getAndFillData();
+
         }
 
-
+        /*
         function lookupTags() {
             const query = document.getElementById('tags').value;
             if (query.length < 2) {
@@ -292,8 +341,20 @@
             document.getElementById('tags').value = tag;
             document.getElementById('suggestions').innerHTML = '';
         }
-
+        */
         function submitData() {
+
+            // Get ID from URL param string (set by index page table logic)
+            const paramString = window.location.search;
+            const urlParams = new URLSearchParams(paramString);
+            if (urlParams.has('id')) {
+                id = urlParams.get('id');
+            } else {
+                // TODO: Add logic to support editing/updating IDs manually
+                // ID value was not provided, redirect to index page
+                navigateTo('index.html');
+            }            
+
             const name = document.getElementById('name').value;
             const type = document.getElementById('type').value;
             const username = document.getElementById('username').value;
@@ -307,6 +368,7 @@
             const tags = document.getElementById('tags').value;
 
             const data = {
+                id: id,
                 name: name,
                 type: type,
                 username: username,
@@ -321,9 +383,9 @@
             };
 
             console.log(JSON.stringify(data));
-
+            
             // Example of API call to submit the data
-            fetch('/api/data', {
+            fetch('/api/update', {
                 method: 'POST',
                 headers: {
                     'Authorization': 'Bearer '+ getCookie('token'),
@@ -337,6 +399,7 @@
                 navigateTo("/index.html")
             })
             .catch(error => console.error('Error submitting data:', error));
+            
         }
 
         function navigateTo(page) {

@@ -123,8 +123,18 @@
             border: 1px solid #ddd;
         }
 
+        .data-table td {
+            cursor: pointer;
+        }
+
+        .data-table tr:hover {
+            background-color: #e3e3e3;
+            transition: background-color  0.5s;
+        }
+
         .data-table th {
             background-color: #f4f4f4;
+            
         }
     </style>
 </head>
@@ -274,6 +284,8 @@
                 const cellSystem = row.insertCell();
                 const cellService = row.insertCell();
 
+                const rowID = '/update.html?id=' + item.id;
+
                 cellName.textContent = item.name;
                 cellType.textContent = item.type;
                 cellTeam.textContent = item.teamnum;
@@ -281,6 +293,9 @@
                 cellValue.textContent = item.value;
                 cellSystem.textContent = item.system;
                 cellService.textContent = item.service;
+                
+                row.onclick = function(){navigateTo(rowID)};;
+                //console.log(rowID);
                 
             });
         }

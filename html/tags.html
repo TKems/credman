@@ -167,40 +167,38 @@
     <!-- Main Content -->
     <div class="main-content">
         <div class="tag-form">
-            <h2>Add Tags to Data Values</h2>
+            <h2>Add Tag</h2>
             <div class="data-row">
-                <label for="data1">Data Value 1</label>
-                <input type="text" id="data1" placeholder="Enter tags for Data Value 1 (comma-separated)">
+                <label for="tag-value">Tag Value</label>
+                <input type="text" id="data1" placeholder="Tag name...">
             </div>
-            <div class="data-row">
-                <label for="data2">Data Value 2</label>
-                <input type="text" id="data2" placeholder="Enter tags for Data Value 2 (comma-separated)">
-            </div>
-            <div class="data-row">
-                <label for="data3">Data Value 3</label>
-                <input type="text" id="data3" placeholder="Enter tags for Data Value 3 (comma-separated)">
-            </div>
-            <div class="data-row">
-                <label for="data4">Data Value 4</label>
-                <input type="text" id="data4" placeholder="Enter tags for Data Value 4 (comma-separated)">
-            </div>
-            <button type="submit" onclick="submitTags()">Submit Tags</button>
+            
+            <button type="submit" onclick="submitTag()">Add Tag</button>
         </div>
     </div>
 
     <script>
         function submitTags() {
-            let tags1 = document.getElementById('data1').value;
-            let tags2 = document.getElementById('data2').value;
-            let tags3 = document.getElementById('data3').value;
-            let tags4 = document.getElementById('data4').value;
+            let tags1 = document.getElementById('tag-value').value;
 
-            // This is where you'd send the tags data to a server or handle it in some way.
-            alert('Tags submitted:\n' +
-                'Data 1: ' + tags1 + '\n' +
-                'Data 2: ' + tags2 + '\n' +
-                'Data 3: ' + tags3 + '\n' +
-                'Data 4: ' + tags4);
+            const data = {
+                value: value
+            };
+            // Example of API call to submit the data
+            fetch('/api/addtags', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer '+ getCookie('token'),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                console.log(result);
+                navigateTo("/index.html")
+            })
+            .catch(error => console.error('Error submitting data:', error));
         }
 
         function navigateTo(page) {
